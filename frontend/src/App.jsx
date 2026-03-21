@@ -2,63 +2,57 @@ import { useState, useEffect } from 'react';
 import AgoraRTC from 'agora-rtc-sdk-ng';
 import './App.css';
 
-// Initialize the Agora Client
 const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
 
 function App() {
-  // --- 1. Cognitive Mirror State ---
   const [identifiedPerson, setIdentifiedPerson] = useState(null);
-
-  // --- 2. Agora RTC State ---
   const [isJoined, setIsJoined] = useState(false);
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
   const [localAudioTrack, setLocalAudioTrack] = useState(null);
   const [remoteUsers, setRemoteUsers] = useState({});
+  
+  // NEW: AI State
+  const [aiMessage, setAiMessage] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
 
-  // IMPORTANT: Paste your Agora App ID here
-  const APP_ID = "YOUR_AGORA_APP_ID_HERE"; 
+  const APP_ID = "1c4fa734f0e743cebd10a935572c6fa5"; 
   const CHANNEL_NAME = "CognitiveRoom1";
 
-  // --- 3. Connect to Backend & Join Call ---
   const joinVideoCall = async () => {
     try {
-      console.log("Fetching token from backend...");
-      // Ask your Node.js backend (running on port 3000) for the token
-      const response = await fetch(`http://localhost:3000/api/get-token?channelName=${CHANNEL_NAME}`);
+      const response = await fetch(`http://127.0.0.1:3000/api/get-token?channelName=${CHANNEL_NAME}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`BACKEND ERROR: ${errorData.error}`);
+        return;
+      }
+
       const data = await response.json();
       const token = data.token;
+      const serverUid = data.uid; 
 
-      // Join the Agora channel using the credentials
-      const uid = await client.join(APP_ID, CHANNEL_NAME, token, null);
-      console.log("Joined Agora channel with UID:", uid);
-
-      // Request camera and microphone permissions
+      const uid = await client.join(APP_ID, CHANNEL_NAME, token, serverUid); 
       const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+      
       setLocalAudioTrack(audioTrack);
       setLocalVideoTrack(videoTrack);
-
-      // Publish your feed to the channel
       await client.publish([audioTrack, videoTrack]);
       setIsJoined(true);
 
-      // Play your camera feed in the bottom-right UI box
       videoTrack.play('local-player');
-
     } catch (error) {
-      console.error("Failed to connect to Agora or Backend:", error);
-      alert("Backend connection failed! Is your Node.js server running on port 3000?");
+      console.error("Failed to connect:", error);
+      alert("Failed to connect. Check the console for details.");
     }
   };
 
-  // --- 4. Handle Remote Callers Joining ---
+  // ... (Keep the useEffect for Agora event listeners exactly the same) ...
   useEffect(() => {
     const handleUserPublished = async (user, mediaType) => {
       await client.subscribe(user, mediaType);
-      
       if (mediaType === 'video') {
-        // Add the remote user to state
         setRemoteUsers((prev) => ({ ...prev, [user.uid]: user }));
-        // Give React a millisecond to render the DOM div before injecting the video
         setTimeout(() => user.videoTrack.play(`remote-player-${user.uid}`), 0);
       }
       if (mediaType === 'audio') {
@@ -77,46 +71,86 @@ function App() {
     client.on("user-published", handleUserPublished);
     client.on("user-unpublished", handleUserUnpublished);
 
-    // Cleanup listeners when component unmounts
     return () => {
       client.off("user-published", handleUserPublished);
       client.off("user-unpublished", handleUserUnpublished);
     };
   }, []);
 
-  // --- 5. Simulate AI Identification ---
   const simulateDetection = () => {
     setIdentifiedPerson({
-      name: "Sarah",
-      relation: "Your Granddaughter",
-      imageUrl: "https://placehold.co/150x150/png?text=Young+Sarah"
+      name: "Maria",
+      relation: "Your Daughter",
+      imageUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150"
     });
+    setTimeout(() => setIdentifiedPerson(null), 15000);
   };
 
-  return (
+  // NEW: Function to test the AI Brain
+  const testAIAgent = async () => {
+    setIsThinking(true);
+    setAiMessage(""); // Clear old message
+    try {
+      const response = await fetch('http://127.0.0.1:3000/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: "Who are you? I do not remember you being in my house.",
+          callerContext: {
+            callerName: identifiedPerson ? identifiedPerson.name : "Maria",
+            relation: identifiedPerson ? identifiedPerson.relation : "daughter"
+          }
+        })
+      });
+
+      const data = await response.json();
+      setAiMessage(data.reply);
+      
+      // Auto-hide the subtitle after 10 seconds
+      setTimeout(() => setAiMessage(""), 10000);
+    } catch (error) {
+      console.error("AI Error:", error);
+      setAiMessage("I am right here with you. Take your time.");
+    }
+    setIsThinking(false);
+  };
+
+   (
     <div className="cognitive-mirror-container">
       
-      {/* 1. Main Video Feed (Remote Caller) */}
+      {/* 1. Main Video Feed */}
       <div className="main-video-feed">
         {Object.keys(remoteUsers).length === 0 ? (
-          <div className="placeholder-text">Waiting for remote caller...</div>
+          <div className="empty-state">
+            <div className="pulse-ring"></div>
+            <h2>Waiting for Family...</h2>
+            <p>Your loved ones will appear here soon.</p>
+          </div>
         ) : (
           Object.keys(remoteUsers).map((uid) => (
-            <div 
-              key={uid} 
-              id={`remote-player-${uid}`} 
-              style={{ width: '100%', height: '100%' }}
-            ></div>
+            <div key={uid} id={`remote-player-${uid}`} className="remote-video-wrapper"></div>
           ))
         )}
       </div>
 
-      {/* 2. Relationship Card (Slides in when identifiedPerson is not null) */}
+      {/* NEW: AI Subtitle Overlay */}
+      {(aiMessage || isThinking) && (
+        <div className="ai-subtitle-container">
+          {isThinking ? (
+            <span className="thinking-dots">Cognitive Mirror is thinking...</span>
+          ) : (
+            <p className="ai-text">✨ "{aiMessage}"</p>
+          )}
+        </div>
+      )}
+
+      {/* 2. Relationship Card */}
       <div className={`relationship-card ${identifiedPerson ? 'slide-in' : ''}`}>
         {identifiedPerson && (
           <>
             <img src={identifiedPerson.imageUrl} alt={identifiedPerson.name} className="historical-photo" />
             <div className="metadata">
+              <span className="badge">Verified Family</span>
               <h2 className="name-tag">{identifiedPerson.name}</h2>
               <p className="relation-tag">{identifiedPerson.relation}</p>
             </div>
@@ -124,36 +158,32 @@ function App() {
         )}
       </div>
 
-      {/* 3. Patient Preview & Name Tag */}
+      {/* 3. Patient Preview */}
       <div className="patient-preview-container">
-        {/* The ID 'local-player' is used by Agora to inject your camera feed */}
         <div id="local-player" className="patient-video-feed">
           {!isJoined && <span className="placeholder-text">Camera Off</span>}
         </div>
         <div className="patient-name-tag">
-          Klyde - You
+          👤 Klyde (You)
         </div>
       </div>
 
-      {/* 4. Controls (Join, Help, Volume) */}
-      <div className="controls-container">
-        {!isJoined && (
-           <button 
-             style={{ backgroundColor: '#4CAF50', padding: '20px', borderRadius: '12px', color: 'white', fontWeight: 'bold', cursor: 'pointer', border: 'none' }} 
-             onClick={joinVideoCall}
-           >
-             CONNECT
+ {/* 4. Controls */}
+ <div className="controls-container" style={{ display: 'flex', gap: '16px' }}>
+        {!isJoined ? (
+           <button className="connect-button" onClick={joinVideoCall}>
+             🟢 START CALL
+           </button>
+        ) : (
+           <button className="help-button" onClick={simulateDetection}>
+             🔍 ID CALLER
            </button>
         )}
         
-        <button className="help-button" onClick={simulateDetection}>
-           HELP
+        {/* MOVED: Now the AI button is always visible! */}
+        <button className="ai-returnbutton" onClick={testAIAgent} disabled={isThinking}>
+          🧠 ASK AI
         </button>
-        
-        <div className="volume-control">
-          <label htmlFor="volume">Volume</label>
-          <input type="range" id="volume" name="volume" min="0" max="100" className="volume-slider"/>
-        </div>
       </div>
       
     </div>

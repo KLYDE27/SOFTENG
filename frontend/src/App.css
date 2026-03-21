@@ -1,102 +1,156 @@
-/* Base Reset & Accessibility Standards */
+/* Accessibility & Theme Variables */
 :root {
-  --bg-dark: #121212;
-  --text-light: #FFFFFF;
-  --accent-color: #FFD700; /* High contrast yellow */
-  --card-bg: rgba(30, 30, 30, 0.95);
-  --danger-red: #D32F2F;
+  --bg-dark: #0f172a; /* Deep soothing navy */
+  --card-bg: #ffffff; /* Crisp white for contrast */
+  --text-dark: #0f172a;
+  --text-light: #f8fafc;
+  --accent-blue: #3b82f6;
+  --accent-green: #22c55e;
+  --danger-red: #ef4444;
+  --shadow-heavy: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* 1. NUKE ALL DEFAULT MARGINS AND PADDING */
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
 
-body {
-  font-family: system-ui, -apple-system, sans-serif;
+/* 2. FORCE HTML, BODY, AND #ROOT TO BE EXACTLY THE SCREEN SIZE */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   background-color: var(--bg-dark);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text-light);
-  overflow: hidden; /* Prevent scrolling, act like an app */
 }
 
-/* Main Container */
+/* 3. CONTAIN THE APP PERFECTLY */
 .cognitive-mirror-container {
   position: relative;
-  width: 100%; /* Changed from 100vw to fix clipping */
-  height: 100vh;
+  width: 100%; 
+  height: 100%; 
   display: flex;
+  background-color: #000; /* True black behind videos */
 }
 
-/* 1. Remote Caller Video (Background) */
+/* 4. Main Video Feed */
 .main-video-feed {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #2c2c2c;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1;
 }
 
-/* 2. Relationship Card (Reminiscence Therapy) */
+.remote-video-wrapper {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.empty-state {
+  text-align: center;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.empty-state h2 { font-size: 32px; color: var(--text-light); }
+.empty-state p { font-size: 20px; }
+
+/* 5. Relationship Card */
 .relationship-card {
   position: absolute;
-  top: 10%;
-  left: -400px; /* Hidden off-screen by default */
-  width: 350px;
+  top: 40px;
+  left: -500px; /* Hidden off-screen */
+  width: 420px;
   background-color: var(--card-bg);
-  border-left: 8px solid var(--accent-color);
-  border-radius: 0 16px 16px 0;
-  padding: 24px;
+  border-left: 12px solid var(--accent-blue);
+  border-radius: 0 24px 24px 0;
+  padding: 30px;
   display: flex;
   align-items: center;
-  gap: 20px;
-  z-index: 10;
-  transition: left 0.5s ease-in-out;
-  box-shadow: 4px 4px 20px rgba(0,0,0,0.5);
+  gap: 24px;
+  z-index: 50;
+  transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1); /* Smooth spring effect */
+  box-shadow: var(--shadow-heavy);
 }
 
 .relationship-card.slide-in {
-  left: 0; /* Slide in */
+  left: 0; /* Triggers the slide-in */
 }
 
 .historical-photo {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--accent-color);
+  border: 4px solid var(--accent-blue);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.metadata {
+  display: flex;
+  flex-direction: column;
+  color: var(--text-dark);
+}
+
+.badge {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 12px;
+  width: fit-content;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .name-tag {
-  font-size: 32px; /* Large legible font */
-  font-weight: bold;
-  margin-bottom: 8px;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 4px;
 }
 
 .relation-tag {
-  font-size: 20px;
-  color: #B0BEC5;
+  font-size: 24px;
+  color: #64748b;
+  font-weight: 500;
 }
 
-/* 3. Patient Preview (Bottom Right) */
+/* 6. Patient Preview */
 .patient-preview-container {
   position: absolute;
   bottom: 40px;
   right: 40px;
-  width: 250px;
-  z-index: 10;
+  width: 300px;
+  z-index: 20;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.5);
-  border-radius: 12px;
+  box-shadow: var(--shadow-heavy);
+  border-radius: 20px;
   overflow: hidden;
-  border: 2px solid #555;
+  border: 4px solid #334155;
+  background-color: var(--card-bg);
 }
 
 .patient-video-feed {
-  height: 180px;
-  background-color: #444;
+  height: 220px;
+  background-color: #1e293b;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,62 +158,106 @@ body {
 
 .patient-name-tag {
   background-color: var(--card-bg);
-  padding: 12px;
+  color: var(--text-dark);
+  padding: 16px;
   text-align: center;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: bold;
-  border-top: 2px solid #555;
 }
 
-/* 4. Controls (Bottom Left) */
+/* 7. Controls */
 .controls-container {
   position: absolute;
   bottom: 40px;
   left: 40px;
-  z-index: 10;
+  z-index: 20;
+}
+
+.connect-button, .help-button {
+  border: none;
+  border-radius: 20px;
+  padding: 24px 48px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: var(--shadow-heavy);
+  transition: transform 0.1s ease;
   display: flex;
   align-items: center;
-  gap: 30px;
-  background-color: var(--card-bg);
-  padding: 20px;
-  border-radius: 16px;
+  gap: 12px;
+}
+
+.connect-button {
+  background-color: var(--accent-green);
+  color: white;
 }
 
 .help-button {
   background-color: var(--danger-red);
   color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 20px 40px;
-  font-size: 28px;
-  font-weight: bold;
-  cursor: pointer;
-  min-width: 120px;
-  min-height: 80px; /* Massive touch target */
 }
 
-.help-button:active {
-  background-color: #b71c1c;
-}
-
-.volume-control {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.volume-control label {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.volume-slider {
-  width: 200px;
-  height: 44px; /* Forgiving touch target height */
-  cursor: pointer;
+.connect-button:active, .help-button:active {
+  transform: scale(0.96);
 }
 
 .placeholder-text {
-  color: #888;
-  font-size: 18px;
+  color: #94a3b8;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+/* 8. AI Subtitles */
+.ai-subtitle-container {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 2px solid var(--accent-blue);
+  padding: 24px 40px;
+  border-radius: 16px;
+  z-index: 100;
+  max-width: 80%;
+  box-shadow: var(--shadow-heavy);
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+
+.ai-text {
+  font-size: 32px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.4;
+}
+
+.thinking-dots {
+  font-size: 24px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.ai-button {
+  border: none;
+  border-radius: 20px;
+  padding: 24px 48px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: var(--shadow-heavy);
+  transition: transform 0.1s ease;
+  background-color: #8b5cf6; /* Distinct purple for AI */
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.ai-button:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
 }
